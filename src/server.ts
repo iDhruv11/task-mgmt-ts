@@ -158,4 +158,63 @@ app.get("/profile/:id", async (req, res) => {
   }
 });
 
+app.post("/tasks", async (req, res) => {
+  const { title, description, userId } = req.body;
+
+  if (!title || !userId) {
+    return res.status(400).json({
+      success: false,
+      message: "Title and userId required"
+    });
+  }
+
+  try {
+    const result = await client.query(
+      `
+      INSERT INTO tasks(title, description, user_id)
+      VALUES($1,$2,$3)
+      RETURNING *
+      `,
+      [title, description, userId]
+    );
+
+    res.json({
+      success: true,
+      task: result.rows[0]
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+app.get("/tasks/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const result = await client.query(
+      `
+      SELECT *
+      FROM tasks
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      tasks: result.rows
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
 startServer();
