@@ -217,4 +217,57 @@ app.get("/tasks/:userId", async (req, res) => {
   }
 });
 
+app.put("/tasks/:id/complete", async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const result = await client.query(
+      `
+      UPDATE tasks
+      SET completed = true
+      WHERE id = $1
+      RETURNING *
+      `,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      task: result.rows[0]
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+app.delete("/tasks/:id", async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    await client.query(
+      `
+      DELETE FROM tasks
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: "Task deleted"
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+
 startServer();
