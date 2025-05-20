@@ -1,6 +1,7 @@
 import express from "express";
 import { connectDB } from "./database";
 import client from "./database";
+import { createUser, getUserByEmail } from "./auth";
 
 const app = express();
 app.use(express.json());
@@ -60,13 +61,7 @@ app.post("/register", async (req, res) => {
       });
     }
 
-    await client.query(
-      `
-      INSERT INTO users(username,email,password)
-      VALUES($1,$2,$3)
-      `,
-      [username, email, password]
-    );
+    await createUser(username, email, password);
 
     res.json({
       success: true,
@@ -91,14 +86,7 @@ app.post("/login", async (req, res) => {
   }
 
   try {
-    const result = await client.query(
-      `
-      SELECT *
-      FROM users
-      WHERE email = $1
-      `,
-      [email]
-    );
+    const result = await getUserByEmail(email);
 
     const user = result.rows[0];
 
@@ -259,6 +247,35 @@ app.delete("/tasks/:id", async (req, res) => {
     res.json({
       success: true,
       message: "Task deleted"
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+app.put("/tasks/:id", async (req, res) => {
+  const id = req.params.id;
+  const { title, description } = req.body;
+
+  try {
+    const result = await client.query(
+      `
+      UPDATE tasks
+      SET title = $1,
+          description = $2
+      WHERE id = $3
+      RETURNING *
+      `,
+      [title, description, id]
+    );
+
+    res.json({
+      success: true,
+      task: result.rows[0]
     });
   } catch (error) {
     console.error(error);
