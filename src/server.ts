@@ -2,6 +2,7 @@ import express from "express";
 import { connectDB } from "./database";
 import client from "./database";
 import { createUser, getUserByEmail } from "./auth";
+import bcrypt from "bcrypt";
 
 const app = express();
 app.use(express.json());
@@ -97,7 +98,12 @@ app.post("/login", async (req, res) => {
       });
     }
 
-    if (user.password !== password) {
+    const passwordMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!passwordMatch) {
       return res.status(401).json({
         success: false,
         message: "Invalid password"
