@@ -3,6 +3,7 @@ import { connectDB } from "./database";
 import client from "./database";
 import { createUser, getUserByEmail } from "./auth";
 import bcrypt from "bcrypt";
+import { generateToken } from "./auth";
 
 const app = express();
 app.use(express.json());
@@ -110,10 +111,16 @@ app.post("/login", async (req, res) => {
       });
     }
 
+    const token = generateToken({
+      id: user.id,
+      email: user.email
+    });
+
     res.json({
       success: true,
-      user
+      token
     });
+
   } catch (error) {
     console.error(error);
 

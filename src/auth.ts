@@ -1,5 +1,7 @@
 import client from "./database";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { JwtPayload } from "./types";
 
 export async function createUser(
   username: string,
@@ -26,5 +28,15 @@ export async function getUserByEmail(email: string) {
     WHERE email = $1
     `,
     [email]
+  );
+}
+
+export function generateToken(payload: JwtPayload) {
+  return jwt.sign(
+    payload,
+    "super-secret-key",
+    {
+      expiresIn: "24h"
+    }
   );
 }
