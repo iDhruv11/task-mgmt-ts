@@ -4,6 +4,7 @@ import client from "./database";
 import { createUser, getUserByEmail } from "./auth";
 import bcrypt from "bcrypt";
 import { generateToken } from "./auth";
+import { authMiddleware } from "./middleware";
 
 const app = express();
 app.use(express.json());
@@ -159,16 +160,17 @@ app.get("/profile/:id", async (req, res) => {
   }
 });
 
-app.post("/tasks", async (req, res) => {
-  const { title, description, userId } = req.body;
+app.post("/tasks", authMiddleware, async (req, res) => {
+  const { title, description } = req.body;
 
-  if (!title || !userId) {
+  if (!title) {
     return res.status(400).json({
       success: false,
       message: "Title and userId required"
     });
   }
 
+  const userId = (req as any).user.id;
   try {
     const result = await client.query(
       `
@@ -192,7 +194,7 @@ app.post("/tasks", async (req, res) => {
   }
 });
 
-app.get("/tasks/:userId", async (req, res) => {
+app.get("/tasks/:userId", authMiddleware, async (req, res) => {
   const userId = req.params.userId;
 
   try {
@@ -218,7 +220,7 @@ app.get("/tasks/:userId", async (req, res) => {
   }
 });
 
-app.put("/tasks/:id/complete", async (req, res) => {
+app.put("/tasks/:id/complete", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -245,7 +247,7 @@ app.put("/tasks/:id/complete", async (req, res) => {
   }
 });
 
-app.delete("/tasks/:id", async (req, res) => {
+app.delete("/tasks/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -298,6 +300,5 @@ app.put("/tasks/:id", async (req, res) => {
     });
   }
 });
-
 
 startServer();
