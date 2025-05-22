@@ -5,6 +5,13 @@ import { createUser, getUserByEmail } from "./auth";
 import bcrypt from "bcrypt";
 import { generateToken } from "./auth";
 import { authMiddleware } from "./middleware";
+import {
+  createTask,
+  getTasks,
+  completeTask,
+  updateTask,
+  deleteTask
+} from "./tasks";
 
 const app = express();
 app.use(express.json());
@@ -172,13 +179,10 @@ app.post("/tasks", authMiddleware, async (req, res) => {
 
   const userId = (req as any).user.id;
   try {
-    const result = await client.query(
-      `
-      INSERT INTO tasks(title, description, user_id)
-      VALUES($1,$2,$3)
-      RETURNING *
-      `,
-      [title, description, userId]
+    const result = await createTask(
+      title,
+      description,
+      userId
     );
 
     res.json({
@@ -198,14 +202,7 @@ app.get("/tasks/:userId", authMiddleware, async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const result = await client.query(
-      `
-      SELECT *
-      FROM tasks
-      WHERE user_id = $1
-      `,
-      [userId]
-    );
+    const result = await getTasks(userId);
 
     res.json({
       success: true,
@@ -224,15 +221,7 @@ app.put("/tasks/:id/complete", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
-    const result = await client.query(
-      `
-      UPDATE tasks
-      SET completed = true
-      WHERE id = $1
-      RETURNING *
-      `,
-      [id]
-    );
+    const result = await completeTask(id);
 
     res.json({
       success: true,
@@ -251,13 +240,7 @@ app.delete("/tasks/:id", authMiddleware, async (req, res) => {
   const id = req.params.id;
 
   try {
-    await client.query(
-      `
-      DELETE FROM tasks
-      WHERE id = $1
-      `,
-      [id]
-    );
+    const result = await deleteTask(id);
 
     res.json({
       success: true,
@@ -277,16 +260,7 @@ app.put("/tasks/:id", async (req, res) => {
   const { title, description } = req.body;
 
   try {
-    const result = await client.query(
-      `
-      UPDATE tasks
-      SET title = $1,
-          description = $2
-      WHERE id = $3
-      RETURNING *
-      `,
-      [title, description, id]
-    );
+    const result = await updateTask(id, title, description);
 
     res.json({
       success: true,
