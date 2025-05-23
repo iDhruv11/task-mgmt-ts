@@ -1,9 +1,9 @@
-import { Client } from "pg";
+import { Pool } from "pg";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const client = new Client({
+const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT),
   user: process.env.DB_USER,
@@ -13,7 +13,7 @@ const client = new Client({
 
 export async function connectDB() {
   try {
-    await client.connect();
+    await pool.query("SELECT 1");
     console.log("Database connected");
   } catch (error) {
     console.error("Database connection failed");
@@ -21,4 +21,4 @@ export async function connectDB() {
   }
 }
 
-export default client;
+export default pool;

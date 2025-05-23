@@ -34,7 +34,7 @@ export async function getUserByEmail(email: string) {
 export function generateToken(payload: JwtPayload) {
   return jwt.sign(
     payload,
-    "super-secret-key",
+    process.env.JWT_SECRET as string,
     {
       expiresIn: "24h"
     }

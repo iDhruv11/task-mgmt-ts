@@ -200,6 +200,14 @@ app.post("/tasks", authMiddleware, async (req, res) => {
 
 app.get("/tasks/:userId", authMiddleware, async (req, res) => {
   const userId = req.params.userId;
+  const currentUserId = String((req as any).user.id);
+
+  if (currentUserId !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied"
+    });
+  }
 
   try {
     const result = await getTasks(userId);
