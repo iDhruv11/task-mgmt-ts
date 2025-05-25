@@ -10,7 +10,9 @@ import {
   getTasks,
   completeTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  getTaskById,
+  getUserById
 } from "./tasks";
 
 const app = express();
@@ -142,14 +144,7 @@ app.get("/profile/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    const result = await client.query(
-      `
-      SELECT *
-      FROM users
-      WHERE id = $1
-      `,
-      [id]
-    );
+    const result = await getUserById(id);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -274,6 +269,41 @@ app.put("/tasks/:id", async (req, res) => {
       success: true,
       task: result.rows[0]
     });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+app.get("/task/:id", authMiddleware, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const result = await getTaskById(id);
+
+    const task = res.json(task);
+    if (!task) {
+      return res.status(404).json({
+        success: false
+      });
+    }
+    if (task.user_id !== (req as any).user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
+      });
+    }
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false
+      });
+    }
+
+    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
 

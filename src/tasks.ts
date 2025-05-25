@@ -64,3 +64,14 @@ export async function deleteTask(id: string) {
     [id]
   );
 }
+
+export async function getTaskById(id: string) {
+  return client.query(
+    `
+    SELECT *
+    FROM tasks
+    WHERE id = $1
+    `,
+    [id]
+  );
+}

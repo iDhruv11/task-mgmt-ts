@@ -40,3 +40,14 @@ export function generateToken(payload: JwtPayload) {
     }
   );
 }
+
+export async function getUserById(id: string) {
+  return client.query(
+    `
+    SELECT *
+    FROM users
+    WHERE id = $1
+    `,
+    [id]
+  );
+}
