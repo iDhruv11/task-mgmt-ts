@@ -313,4 +313,90 @@ app.get("/task/:id", authMiddleware, async (req, res) => {
   }
 });
 
+app.post("/teams", authMiddleware, async (req, res) => {
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({
+      success: false
+    });
+  }
+
+  try {
+    const result = await client.query(
+      `
+      INSERT INTO teams(name, owner_id)
+      VALUES($1,$2)
+      RETURNING *
+      `,
+      [name, (req as any).user.id]
+    );
+
+    res.json({
+      success: true,
+      team: result.rows[0]
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+app.post("/teams/:id/join", authMiddleware, async (req, res) => {
+  const teamId = req.params.id;
+
+  try {
+    await client.query(
+      `
+      INSERT INTO team_members(team_id, user_id)
+      VALUES($1,$2)
+      `,
+      [teamId, (req as any).user.id]
+    );
+
+    res.json({
+      success: true
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
+app.get("/teams/:id/members", authMiddleware, async (req, res) => {
+  const teamId = req.params.id;
+
+  try {
+    const result = await client.query(
+      `
+      SELECT users.id,
+             users.username,
+             users.email
+      FROM team_members
+      JOIN users
+      ON users.id = team_members.user_id
+      WHERE team_members.team_id = $1
+      `,
+      [teamId]
+    );
+
+    res.json({
+      success: true,
+      members: result.rows
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false
+    });
+  }
+});
+
 startServer();
