@@ -3,15 +3,16 @@ import client from "./database";
 export async function createTask(
   title: string,
   description: string,
-  userId: number
+  userId: number,
+  teamId: number | null
 ) {
   return client.query(
     `
-    INSERT INTO tasks(title, description, user_id)
-    VALUES($1,$2,$3)
+    INSERT INTO tasks(title, description, user_id, team_id)
+    VALUES($1,$2,$3,$4)
     RETURNING *
     `,
-    [title, description, userId]
+    [title, description, userId, teamId]
   );
 }
 

@@ -28,5 +28,6 @@ CREATE TABLE teams (
 CREATE TABLE team_members (
     id SERIAL PRIMARY KEY,
     team_id INTEGER REFERENCES teams(id),
-    user_id INTEGER REFERENCES users(id)
+    user_id INTEGER REFERENCES users(id),
+    UNIQUE(team_id, user_id)
 );

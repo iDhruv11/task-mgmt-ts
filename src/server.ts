@@ -14,6 +14,7 @@ import {
   getTaskById,
   getUserById
 } from "./tasks";
+import { getTeamMembers, isTeamMember } from "./teams";
 
 const app = express();
 app.use(express.json());
@@ -163,7 +164,7 @@ app.get("/profile/:id", async (req, res) => {
 });
 
 app.post("/tasks", authMiddleware, async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, teamId } = req.body;
 
   if (!title) {
     return res.status(400).json({
@@ -177,7 +178,8 @@ app.post("/tasks", authMiddleware, async (req, res) => {
     const result = await createTask(
       title,
       description,
-      userId
+      userId,
+      teamId
     );
 
     res.json({
@@ -349,6 +351,28 @@ app.post("/teams/:id/join", authMiddleware, async (req, res) => {
   const teamId = req.params.id;
 
   try {
+    const existingMember = await client.query(
+      `
+  SELECT *
+  FROM team_members
+  WHERE team_id = $1
+  AND user_id = $2
+  `,
+      [teamId, (req as any).user.id]
+    );
+
+    if (existingMember.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Already joined"
+      });
+    }
+    if (existingMember.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Already joined"
+      });
+    }
     await client.query(
       `
       INSERT INTO team_members(team_id, user_id)
@@ -373,18 +397,18 @@ app.get("/teams/:id/members", authMiddleware, async (req, res) => {
   const teamId = req.params.id;
 
   try {
-    const result = await client.query(
-      `
-      SELECT users.id,
-             users.username,
-             users.email
-      FROM team_members
-      JOIN users
-      ON users.id = team_members.user_id
-      WHERE team_members.team_id = $1
-      `,
-      [teamId]
+    const membership = await isTeamMember(
+      teamId,
+      (req as any).user.id
     );
+
+    if (membership.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
+      });
+    }
+    const result = await getTeamMembers(teamId);
 
     res.json({
       success: true,
