@@ -40,3 +40,31 @@ export async function isTeamMember(
     [teamId, userId]
   );
 }
+
+export async function isTeamOwner(
+  teamId: string,
+  userId: number
+) {
+  return client.query(
+    `
+    SELECT *
+    FROM teams
+    WHERE id = $1
+    AND owner_id = $2
+    `,
+    [teamId, userId]
+  );
+}
+
+export async function getTeamTasks(
+  teamId: string
+) {
+  return client.query(
+    `
+    SELECT *
+    FROM tasks
+    WHERE team_id = $1
+    `,
+    [teamId]
+  );
+}
