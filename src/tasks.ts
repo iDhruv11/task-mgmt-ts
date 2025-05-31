@@ -31,7 +31,7 @@ export async function completeTask(id: string) {
   return client.query(
     `
     UPDATE tasks
-    SET status = 'done'
+    SET status = 'done' updated_at = CURRENT_TIMESTAMP
     WHERE id = $1
     RETURNING *
     `,
@@ -48,7 +48,8 @@ export async function updateTask(
     `
     UPDATE tasks
     SET title = $1,
-        description = $2
+    description = $2,
+    updated_at = CURRENT_TIMESTAMP
     WHERE id = $3
     RETURNING *
     `,
