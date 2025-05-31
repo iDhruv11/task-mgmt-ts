@@ -68,3 +68,18 @@ export async function getTeamTasks(
     [teamId]
   );
 }
+
+export async function getUserTeams(
+  userId: number
+) {
+  return client.query(
+    `
+    SELECT teams.*
+    FROM teams
+    JOIN team_members
+    ON team_members.team_id = teams.id
+    WHERE team_members.user_id = $1
+    `,
+    [userId]
+  );
+}

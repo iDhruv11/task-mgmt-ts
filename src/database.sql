@@ -14,7 +14,7 @@ CREATE TABLE tasks (
     description TEXT,
     user_id INTEGER REFERENCES users(id),
     team_id INTEGER REFERENCES teams(id),
-    completed BOOLEAN DEFAULT FALSE,
+    status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

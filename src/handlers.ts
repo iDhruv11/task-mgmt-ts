@@ -2,6 +2,7 @@ import { Express } from "express";
 import client from "./database";
 import { authMiddleware } from "./middleware";
 import { isTeamMember } from "./teams";
+import { TASK_STATUSES } from "./constants";
 
 export function registerRoutes(
   app: Express
@@ -317,4 +318,69 @@ export function registerRoutes(
     }
   });
 
+  app.put(
+    "/tasks/:id/status",
+    authMiddleware,
+    async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+
+      if (!TASK_STATUSES.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status"
+        });
+      }
+      const result = await client.query(
+        `
+      UPDATE tasks
+      SET status = $1
+      WHERE id = $2
+      RETURNING *
+      `,
+        [status, id]
+      );
+
+      res.json({
+        success: true,
+        task: result.rows[0]
+      });
+    }
+  );
 }
+
+app.get(
+  "/teams",
+  authMiddleware,
+  async (req, res) => {
+    const result = await getUserTeams(
+      (req as any).user.id
+    );
+
+    res.json({
+      success: true,
+      teams: result.rows
+    });
+  }
+);
+
+app.delete(
+  "/teams/:id/leave",
+  authMiddleware,
+  async (req, res) => {
+    const teamId = req.params.id;
+
+    await client.query(
+      `
+      DELETE FROM team_members
+      WHERE team_id = $1
+      AND user_id = $2
+      `,
+      [teamId, (req as any).user.id]
+    );
+
+    res.json({
+      success: true
+    });
+  }
+);
