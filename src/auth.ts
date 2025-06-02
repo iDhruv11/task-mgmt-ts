@@ -1,4 +1,4 @@
-import client from "./database";
+import pool from "./database";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JwtPayload } from "./types";
@@ -10,7 +10,7 @@ export async function createUser(
 ) {
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  return client.query(
+  return pool.query(
     `
     INSERT INTO users(username,email,password)
     VALUES($1,$2,$3)
@@ -21,7 +21,7 @@ export async function createUser(
 }
 
 export async function getUserByEmail(email: string) {
-  return client.query(
+  return pool.query(
     `
     SELECT *
     FROM users
@@ -42,7 +42,7 @@ export function generateToken(payload: JwtPayload) {
 }
 
 export async function getUserById(id: string) {
-  return client.query(
+  return pool.query(
     `
     SELECT *
     FROM users

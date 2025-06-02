@@ -1,7 +1,7 @@
-import client from "./database";
+import pool from "./database";
 
 export async function getTeamById(id: string) {
-  return client.query(
+  return pool.query(
     `
     SELECT *
     FROM teams
@@ -12,7 +12,7 @@ export async function getTeamById(id: string) {
 }
 
 export async function getTeamMembers(id: string) {
-  return client.query(
+  return pool.query(
     `
     SELECT users.id,
            users.username,
@@ -30,7 +30,7 @@ export async function isTeamMember(
   teamId: string,
   userId: number
 ) {
-  return client.query(
+  return pool.query(
     `
     SELECT *
     FROM team_members
@@ -45,7 +45,7 @@ export async function isTeamOwner(
   teamId: string,
   userId: number
 ) {
-  return client.query(
+  return pool.query(
     `
     SELECT *
     FROM teams
@@ -59,7 +59,7 @@ export async function isTeamOwner(
 export async function getTeamTasks(
   teamId: string
 ) {
-  return client.query(
+  return pool.query(
     `
     SELECT *
     FROM tasks
@@ -72,7 +72,7 @@ export async function getTeamTasks(
 export async function getUserTeams(
   userId: number
 ) {
-  return client.query(
+  return pool.query(
     `
     SELECT teams.*
     FROM teams

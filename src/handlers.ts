@@ -1,5 +1,5 @@
 import { Express } from "express";
-import client from "./database";
+import pool from "./database";
 import { authMiddleware } from "./middleware";
 import { isTeamMember } from "./teams";
 import { TASK_STATUSES } from "./constants";
@@ -23,7 +23,7 @@ function registerAuthRoutes(app: Express) {
     }
 
     try {
-      const existingUser = await client.query(
+      const existingUser = await pool.query(
         `SELECT *
         FROM users
         WHERE email = $1`,
@@ -136,13 +136,23 @@ function registerTaskRoutes(app: Express) {
       const id = req.params.id;
       const { status } = req.body;
 
+      const owner = await getTaskOwner(id);
+      if (
+        owner.rows[0]?.user_id !==
+        (req as any).user.id
+      ) {
+        return res.status(403).json({
+          success: false
+        });
+      }
+
       if (!TASK_STATUSES.includes(status)) {
         return res.status(400).json({
           success: false,
           message: "Invalid status"
         });
       }
-      const result = await client.query(
+      const result = await pool.query(
         `
         UPDATE tasks
         SET status = $1 updated_at = CURRENT_TIMESTAMP
@@ -220,6 +230,16 @@ function registerTaskRoutes(app: Express) {
 
   app.put("/tasks/:id/complete", authMiddleware, async (req, res) => {
     const id = req.params.id;
+    const owner = await getTaskOwner(id);
+
+    if (
+      owner.rows[0]?.user_id !==
+      (req as any).user.id
+    ) {
+      return res.status(403).json({
+        success: false
+      });
+    }
 
     try {
       const result = await completeTask(id);
@@ -239,6 +259,16 @@ function registerTaskRoutes(app: Express) {
 
   app.put("/tasks/:id", async (req, res) => {
     const id = req.params.id;
+    const owner = await getTaskOwner(id);
+
+    if (
+      owner.rows[0]?.user_id !==
+      (req as any).user.id
+    ) {
+      return res.status(403).json({
+        success: false
+      });
+    }
     const { title, description } = req.body;
 
     try {
@@ -259,6 +289,16 @@ function registerTaskRoutes(app: Express) {
 
   app.delete("/tasks/:id", authMiddleware, async (req, res) => {
     const id = req.params.id;
+    const owner = await getTaskOwner(id);
+
+    if (
+      owner.rows[0]?.user_id !==
+      (req as any).user.id
+    ) {
+      return res.status(403).json({
+        success: false
+      });
+    }
 
     try {
       const result = await deleteTask(id);
@@ -323,7 +363,7 @@ function registerTeamRoutes(app: Express) {
     }
 
     try {
-      const result = await client.query(
+      const result = await pool.query(
         `
       INSERT INTO teams(name, owner_id)
       VALUES($1,$2)
@@ -349,7 +389,7 @@ function registerTeamRoutes(app: Express) {
     const teamId = req.params.id;
 
     try {
-      const existingMember = await client.query(
+      const existingMember = await pool.query(
         `
   SELECT *
   FROM team_members
@@ -371,7 +411,7 @@ function registerTeamRoutes(app: Express) {
           message: "Already joined"
         });
       }
-      await client.query(
+      await pool.query(
         `
       INSERT INTO team_members(team_id, user_id)
       VALUES($1,$2)
@@ -478,7 +518,7 @@ function registerTeamRoutes(app: Express) {
           message: "Team owner cannot leave team"
         });
       }
-      await client.query(
+      await pool.query(
         `
       DELETE FROM team_members
       WHERE team_id = $1
@@ -510,7 +550,7 @@ function registerTeamRoutes(app: Express) {
         });
       }
 
-      await client.query(
+      await pool.query(
         `
       DELETE FROM teams
       WHERE id = $1
@@ -523,6 +563,56 @@ function registerTeamRoutes(app: Express) {
       });
     }
   );
+
+
+  app.post(
+    "/teams/:id/members",
+    authMiddleware,
+    async (req, res) => {
+      const teamId = req.params.id;
+      const { userId } = req.body;
+
+      const ownerCheck = await isTeamOwner(
+        teamId,
+        (req as any).user.id
+      );
+
+      if (ownerCheck.rows.length === 0) {
+        return res.status(403).json({
+          success: false
+        });
+      }
+
+      const existingMember = await pool.query(
+        `
+       SELECT *
+       FROM team_members
+       WHERE team_id = $1
+       AND user_id = $2
+      `,
+        [teamId, userId]
+      );
+
+      if (existingMember.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "User already in team"
+        });
+      }
+      await pool.query(
+        `
+      INSERT INTO team_members(team_id,user_id)
+      VALUES($1,$2)
+      `,
+        [teamId, userId]
+      );
+
+      res.json({
+        success: true
+      });
+    }
+  );
+
 }
 
 export function registerRoutes(
